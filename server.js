@@ -158,6 +158,55 @@ function addEmployee() {
       });
     });
 }
+function updateEmployee() {
+  var employee_options = [];
+  var role_options = [];
+  db.promise()
+    .query(`SELECT CONCAT(first_name, " ", last_name) AS name FROM employee;`)
+    .then(function ([employees]) {
+      for (var i = 0; i < employees.length; i++) {
+        employee_options.push(employees[i].name);
+      }
+      return db.promise().query(`SELECT title FROM employee_role;`);
+    })
+    .then(function ([roles]) {
+      for (var i = 0; i < roles.length; i++) {
+        role_options.push(roles[i].title);
+      }
+      inquirer
+        .prompt([
+          {
+            type: 'list',
+            name: 'employee_update',
+            message: 'Which employees role do you want to update?',
+            choices: employee_options,
+          },
+          {
+            type: 'list',
+            name: 'employee_role',
+            message: 'Which role do you want to assign the selected employee?',
+            choices: role_options,
+          },
+        ])
+        .then((data) => {
+          const sql = `UPDATE employee SET role_id = (?) WHERE id = (?);`;
+          const emp = employee_options.indexOf(data.employee_update) + 1;
+          const roleOpt = role_options.indexOf(data.employee_role) + 1;
+          const param = [roleOpt, emp];
+
+          db.promise()
+            .query(sql, param)
+            .then(
+              console.log(
+                data.employee_update + ' role has been changed to ' + data.employee_role
+              )
+            );
+
+          companyList();
+        });
+    });
+}
+
 var companyList = () => {
   inquirer
     .prompt({
